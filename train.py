@@ -10,7 +10,7 @@ from model.lightning import AutoEncoderTrainer
 
 def main():
     mod = 't2'
-    epochs = 2
+    epochs = 200
     batch_size = 1
     lr = 1e-3
 

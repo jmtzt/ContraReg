@@ -188,7 +188,7 @@ artifacts/*
 our_model.tar
 test.png
 saved_models
-data/
+dataset/
 .shared
 .lightning
 node_modules/

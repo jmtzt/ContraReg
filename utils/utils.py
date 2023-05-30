@@ -10,8 +10,8 @@ from matplotlib.patches import Rectangle
 from omegaconf.listconfig import ListConfig
 from torchio.visualization import rotate
 
-from image import crop_and_pad, normalise_intensity
-from image_io import load_nifti
+from utils.image import crop_and_pad, normalise_intensity
+from utils.image_io import load_nifti
 
 
 def check_transform_history(history, show=False):

@@ -1,7 +1,7 @@
 """Image/Array utils"""
 import torch
 import numpy as np
-from misc import param_ndim_setup
+from utils.misc import param_ndim_setup
 import torch.nn.functional as F
 
 
@@ -112,7 +112,7 @@ def normalise_intensity(x,
 
     # for torch.Tensor
     elif type(x) is torch.Tensor:
-        # todo: clipping not supported at the moment (requires Pytorch version of the np.percentile()
+        # clipping not supported at the moment (requires Pytorch version of the np.percentile()
 
         # Normalise meanstd
         if mode == "meanstd":
@@ -234,7 +234,7 @@ def roi_crop(x, mask, dim):
     """ Crop input Tensor by the bounding box of roi mask """
 
     if type(x) == torch.Tensor:
-        # TODO: Tensor version of bbox_from_mask
+        # Tensor version of bbox_from_mask
         bbox, _ = bbox_from_mask(mask.squeeze(1).cpu().numpy())
     elif type(x) == np.ndarray:
         bbox, _ = bbox_from_mask(mask)

@@ -1,58 +1,16 @@
 import torch
-import torch.nn as nn
 import lightning as pl
 import torchio as tio
 from lightning.pytorch.loggers import WandbLogger
 from lightning.pytorch.callbacks import ModelCheckpoint
 
-from dataset import BrainMRInterSubj3D
-from model import AutoEncoder
-from loss import LNCCLoss
-
-
-class AutoEncoderTrainer(pl.LightningModule):
-    def __init__(self, mod='t1', learning_rate=1e-3):
-        super().__init__()
-        self.save_hyperparameters({'learning_rate': learning_rate,
-                                   'mod': mod})
-        self.model = AutoEncoder()
-        self.l1_loss = nn.L1Loss()
-        self.ncc_loss = LNCCLoss(window_size=7)
-        self.learning_rate = learning_rate
-        self.mod = mod.lower()
-
-    def forward(self, x):
-        return self.model(x)
-
-    def training_step(self, batch, batch_idx):
-        if self.mod == 't1':
-            x = batch['target']
-        elif self.mod == 't2':
-            x = batch['source']
-        else:
-            raise ValueError(f'Unknown modality: {self.mod}')
-
-        y, features = self.model(x)
-
-        l1_loss = self.l1_loss(y, x)
-        ncc_loss = self.ncc_loss(y, x)
-
-        total_loss = l1_loss + ncc_loss
-
-        self.log('l1_loss', l1_loss)
-        self.log('ncc_loss', ncc_loss)
-        self.log('total_loss', total_loss)
-
-        return total_loss
-
-    def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
-        return optimizer
+from data.dataset import BrainMRInterSubj3D
+from model.lightning import AutoEncoderTrainer
 
 
 def main():
     mod = 't2'
-    epochs = 200
+    epochs = 2
     batch_size = 1
     lr = 1e-3
 
@@ -84,7 +42,8 @@ def main():
 
     logger = WandbLogger(project='ContraRegAutoEncoders', tags=[mod])
 
-    trainer = pl.Trainer(logger=logger,
+    trainer = pl.Trainer(
+                         logger=logger,
                          callbacks=[ckpt_callback],
                          gpus=1,
                          max_epochs=epochs)

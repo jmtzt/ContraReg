@@ -5,7 +5,8 @@ import numpy as np
 from model.utils import init_net, Normalize
 
 
-def conv_block(in_channels, out_channels, kernel_size, stride, padding, instance_norm=True, leaky_relu=True):
+
+def ae_conv_block(in_channels, out_channels, kernel_size, stride, padding, instance_norm=True, leaky_relu=True):
     layers = []
     layers.append(nn.Conv3d(in_channels, out_channels, kernel_size, stride, padding))
     if instance_norm:
@@ -19,24 +20,24 @@ class AutoEncoder(nn.Module):
     def __init__(self):
         super(AutoEncoder, self).__init__()
 
-        self.conv1 = conv_block(1, 32, 3, 2, 1)
-        self.conv2 = conv_block(32, 64, 3, 2, 1)
-        self.conv3 = conv_block(64, 128, 3, 2, 1)
+        self.conv1 = ae_conv_block(1, 32, 3, 2, 1)
+        self.conv2 = ae_conv_block(32, 64, 3, 2, 1)
+        self.conv3 = ae_conv_block(64, 128, 3, 2, 1)
 
         self.upconv1 = nn.Sequential(
             nn.Upsample(scale_factor=2, mode='nearest'),
-            conv_block(128, 64, 3, 1, 1)
+            ae_conv_block(128, 64, 3, 1, 1)
         )
         self.upconv2 = nn.Sequential(
             nn.Upsample(scale_factor=2, mode='nearest'),
-            conv_block(64, 32, 3, 1, 1)
+            ae_conv_block(64, 32, 3, 1, 1)
         )
         self.upconv3 = nn.Sequential(
             nn.Upsample(scale_factor=2, mode='nearest'),
-            conv_block(32, 32, 3, 1, 1)
+            ae_conv_block(32, 32, 3, 1, 1)
         )
 
-        self.conv4 = conv_block(32, 64, 3, 1, 1)
+        self.conv4 = ae_conv_block(32, 64, 3, 1, 1)
         self.conv5 = nn.Conv3d(64, 1, 3, 1, 1)
 
     def forward(self, x):

@@ -3,7 +3,7 @@ from torch import nn as nn
 
 import lightning as pl
 from loss.loss import LNCCLoss
-from .model import AutoEncoder
+from model.model import AutoEncoder
 
 
 class AutoEncoderTrainer(pl.pytorch.LightningModule):

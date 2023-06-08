@@ -5,7 +5,6 @@ import numpy as np
 from model.utils import init_net, Normalize
 
 
-
 def ae_conv_block(in_channels, out_channels, kernel_size, stride, padding, instance_norm=True, leaky_relu=True):
     layers = []
     layers.append(nn.Conv3d(in_channels, out_channels, kernel_size, stride, padding))

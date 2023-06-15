@@ -7,6 +7,7 @@ from torch import nn as nn
 from torch.nn import functional as F
 from packaging import version
 
+from loss.utils import extract_patches
 from model.model import PatchSampleF
 from utils.utils import param_ndim_setup
 
@@ -284,3 +285,53 @@ class CRLoss(nn.Module):
             total_nce_loss += loss.mean()
 
         return total_nce_loss / len(t1_features)
+
+
+class DMMRLoss(nn.Module):
+
+    def __init__(self,
+                 patch_size=17,
+                 batch_size=256,
+                 model_path='/vol/alan/users/toz/midir-pycharm/dmmr_models/complete_camcan_tanh_hinge.pt',
+                 ):
+        super(DMMRLoss, self).__init__()
+        self.patch_size = patch_size
+        self.batch_size = batch_size
+        self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+        self.model = torch.jit.load(model_path).to(self.device)
+
+    def forward(self, fixed, moving):
+        binary_mask = torch.zeros_like(fixed).to(self.device)
+        binary_mask[fixed > 0] = 1
+
+        fixed_patches = extract_patches(fixed, binary_mask, size=self.patch_size)
+        moving_patches = extract_patches(moving, binary_mask, size=self.patch_size)
+
+        concat_patches = torch.cat((fixed_patches, moving_patches), dim=1)
+
+        keep_mask = torch.zeros(concat_patches.shape[0])
+        for i, patch in enumerate(concat_patches):
+            patch = patch[0].squeeze()
+            zero_percentage = torch.mean((patch.squeeze() == 0).float()).item()
+            if zero_percentage > 0.15:
+                keep_mask[i] = 0
+            else:
+                keep_mask[i] = 1
+
+        concat_patches = concat_patches[keep_mask.bool()]
+        concat_patches_dset = torch.utils.data.TensorDataset(concat_patches)
+        concat_patches_loader = torch.utils.data.DataLoader(concat_patches_dset,
+                                                            batch_size=self.batch_size)
+
+        outputs = torch.zeros(0).to(self.device)
+        for batch in concat_patches_loader:
+            fixed_patches_batch, moving_patches_batch = torch.unbind(batch[0], dim=1)
+            fixed_patches_batch = fixed_patches_batch.unsqueeze(1).to(self.device)
+            moving_patches_batch = moving_patches_batch.unsqueeze(1).to(self.device)
+            out = self.model(fixed_patches_batch, moving_patches_batch)
+            labels = out.clone()
+            outputs = torch.cat((outputs, torch.mean(labels).view(-1)), dim=0)
+
+        value = torch.mean(outputs)
+
+        return value
